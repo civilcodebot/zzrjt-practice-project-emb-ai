@@ -1,34 +1,40 @@
-''' Executing this function initiates the application of sentiment
-    analysis to be executed over the Flask channel and deployed on
+''' Executing this function initiates the application of Emotion Detector
+    to be executed over the Flask channel and deployed on
     localhost:5000.
 '''
-# Import Flask, render_template, request from the flask pramework package : TODO
-# Import the sentiment_analyzer function from the package created: TODO
+
 from flask import Flask, render_template, request
-from SentimentAnalysis.sentiment_analysis import sentiment_analyzer
+from EmotionDetection import emotion_detector
 
-#Initiate the flask app : TODO
-app = Flask("Sentiment Analyzer")
+app = Flask("Emotion Detector")
 
-@app.route("/sentimentAnalyzer")
+@app.route("/emotionDetector")
 def sent_analyzer():
-    # Retrieve the text to analyze from the request arguments
+    """
+    Analyzes the text provided by the user via URL query parameter,
+    formats the response, and handles invalid input.
+    """
     text_to_analyze = request.args.get('textToAnalyze')
+    response = emotion_detector(text_to_analyze)
 
-    # Pass the text to the sentiment_analyzer function and store the response
-    response = sentiment_analyzer(text_to_analyze)
+    if response['dominant_emotion'] is None:
+        return "Invalid text! Please try again."
 
-    # Extract the label and score from the response
-    label = response['label']
-    score = response['score']
+    dominant_emotion = response.pop('dominant_emotion')
+    output_string = ", ".join([f"'{key}': {value}" for key, value in response.items()])
 
-    # Return a formatted string with the sentiment label and score
-    return "The given text has been identified as {} with a score of {}.".format(label.split('_')[1], score)
+    return (
+        f"For the given statement, the system response is {output_string}. "
+        f"The dominant emotion is **{dominant_emotion}**."
+    )
 
 @app.route("/")
 def render_index_page():
+    """
+    Renders the main HTML page for the web application.
+    """
     return render_template('index.html')
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
+    
